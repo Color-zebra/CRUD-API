@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start:prod": "webpack --mode=production --node-env=production && node ./build/main.js",
-    "start:dev": "webpack --watch"
+    "start:prod-multi": "webpack --mode=production --node-env=production && cross-env WORK_MODE=multi node ./build/main.js",
+    "start:dev": "webpack --watch",
+    "start:multi": "cross-env WORK_MODE=multi webpack --watch"
   },
   "keywords": [],
   "author": "",

@@ -1,29 +1,29 @@
 // Generated using webpack-cli https://github.com/webpack/webpack-cli
 
-const NodemonPlugin = require("nodemon-webpack-plugin"); // Ding
-const path = require("path");
+const NodemonPlugin = require('nodemon-webpack-plugin');
+const path = require('path');
 
-const isProduction = process.env.NODE_ENV == "production";
+const isProduction = process.env.NODE_ENV == 'production';
 
 const config = {
-  entry: "./src/index.ts",
+  entry: './src/index.ts',
   output: {
     path: isProduction
-      ? path.resolve(__dirname, "build")
-      : path.resolve(__dirname, "dist"),
+      ? path.resolve(__dirname, 'build')
+      : path.resolve(__dirname, 'dist'),
   },
-  target: "node",
+  target: 'node',
   plugins: [new NodemonPlugin()],
   module: {
     rules: [
       {
         test: /\.(ts|tsx)$/i,
-        loader: "ts-loader",
-        exclude: ["/node_modules/"],
+        loader: 'ts-loader',
+        exclude: ['/node_modules/'],
       },
       {
         test: /\.(eot|svg|ttf|woff|woff2|png|jpg|gif)$/i,
-        type: "asset",
+        type: 'asset',
       },
 
       // Add your rules for custom modules here
@@ -31,15 +31,15 @@ const config = {
     ],
   },
   resolve: {
-    extensions: [".tsx", ".ts", ".jsx", ".js", "..."],
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '...'],
   },
 };
 
 module.exports = () => {
   if (isProduction) {
-    config.mode = "production";
+    config.mode = 'production';
   } else {
-    config.mode = "development";
+    config.mode = 'development';
   }
   return config;
 };
