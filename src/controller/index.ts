@@ -2,6 +2,7 @@ import http from 'http';
 import { parseBody } from '../utils/bodyParser';
 import { parseURL } from '../utils/urlParser';
 import { sendWrongUrlError } from '../utils/sendWrongUrlError';
+import { Operations, Repository } from '../repository/index';
 
 enum ENDPOINTS {
   USERS = '/api/users',
@@ -15,26 +16,32 @@ enum METHODS {
 }
 
 export class Controller {
-  constructor() {}
+  repository: Repository;
+  constructor() {
+    this.repository = new Repository();
+  }
 
   listener = async (
     req: http.IncomingMessage,
     res: http.ServerResponse<http.IncomingMessage>
   ) => {
     try {
-      const { url, method, headers } = req;
-      const body = await parseBody(req);
-      const { path, query } = parseURL(url);
-
-      console.log(path, method, ENDPOINTS.USERS);
+      const { url, method } = req;
+      const body = method === 'POST' ? await parseBody(req) : null;
+      const { path } = parseURL(url);
+      console.log('handled by worker with PID', process.pid);
 
       switch (method) {
         case METHODS.GET:
           switch (true) {
-            case path === ENDPOINTS.USERS:
+            case path === ENDPOINTS.USERS: {
               console.log('get all users service');
-              res.end('get all users service');
+              const result = await this.repository[Operations.READ]();
+              console.log(result);
+
+              res.end(JSON.stringify(result));
               break;
+            }
             case path.startsWith(ENDPOINTS.USERS):
               console.log('get specific user service');
               res.end('get specific user service');
@@ -43,14 +50,20 @@ export class Controller {
               sendWrongUrlError(res);
           }
           break;
+
         case METHODS.POST:
           if (path === ENDPOINTS.USERS) {
             console.log('creating user service');
-            res.end('creating user service');
+            res.end(
+              JSON.stringify(
+                await this.repository[Operations.CREATE](JSON.parse(body))
+              )
+            );
           } else {
             sendWrongUrlError(res);
           }
           break;
+
         case METHODS.DELETE:
           if (path.startsWith(ENDPOINTS.USERS)) {
             console.log('deleting user service');
@@ -59,6 +72,7 @@ export class Controller {
             sendWrongUrlError(res);
           }
           break;
+
         case METHODS.PUT:
           if (path.startsWith(ENDPOINTS.USERS)) {
             console.log('updating user service');
