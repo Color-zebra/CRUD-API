@@ -1,4 +1,5 @@
 import http from 'http';
+import net from 'net';
 import { parseBody } from '../utils/bodyParser';
 import { parseURL } from '../utils/urlParser';
 import { sendWrongUrlError } from '../utils/sendWrongUrlError';
@@ -53,6 +54,25 @@ export class Controller {
 
         case METHODS.POST:
           if (path === ENDPOINTS.USERS) {
+            /* ===========================================TEST REP V2================================================= */
+            const socket = new net.Socket();
+            let result = '';
+            socket.on('data', (data) => {
+              console.log((result += data.toString()));
+            });
+            socket.on('end', () => {
+              console.log('Socket closed with data', result);
+            });
+            socket.connect(
+              {
+                port: 3014,
+                host: 'localhost',
+              },
+              () => {
+                socket.write(body);
+              }
+            );
+            /* ===========================================TEST REP V2================================================= */
             console.log('creating user service');
             res.end(
               JSON.stringify(

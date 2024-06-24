@@ -5,6 +5,7 @@ import { Balancer } from './balancer/index';
 import cluster from 'cluster';
 import os from 'os';
 import { Operations, Repository } from './repository';
+import { Repository as RepositoryV2 } from './repository-v2';
 
 dotenv.config();
 
@@ -12,10 +13,12 @@ class App {
   controller: Controller;
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
   port: number;
+  DBPort: number;
   isMulti: boolean;
   balancer: Balancer;
   isMain: boolean;
   repository: Repository;
+  repositoryV2: RepositoryV2;
 
   constructor() {
     this.parseEnv();
@@ -28,6 +31,17 @@ class App {
       this.startMulti();
     } else {
       this.server.listen(this.port);
+    }
+    this.initDB();
+  }
+
+  async initDB() {
+    try {
+      this.repositoryV2 = new RepositoryV2(this.port + os.cpus().length + 1);
+      await this.repositoryV2.init();
+      this.DBPort = this.repositoryV2.getDBPort();
+    } catch (error) {
+      console.log(error);
     }
   }
 
