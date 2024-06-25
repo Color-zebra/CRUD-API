@@ -3,7 +3,7 @@ import net from 'net';
 import { parseBody } from '../utils/bodyParser';
 import { parseURL } from '../utils/urlParser';
 import { sendWrongUrlError } from '../utils/sendWrongUrlError';
-import { Operations, Repository } from '../repository/index';
+import { UserDTO } from '../DB';
 
 enum ENDPOINTS {
   USERS = '/api/users',
@@ -16,16 +16,65 @@ enum METHODS {
   PUT = 'PUT',
 }
 
+export type Action =
+  | {
+      name: 'getAll';
+    }
+  | {
+      name: 'get' | 'delete';
+      payload: string;
+    }
+  | {
+      name: 'create';
+      payload: UserDTO;
+    }
+  | {
+      name: 'update';
+      payload: {
+        id: string;
+        user: UserDTO;
+      };
+    };
+
 export class Controller {
-  repository: Repository;
   constructor() {
-    this.repository = new Repository();
+    this.listener = this.listener.bind(this);
   }
 
-  listener = async (
+  async dispatchAction(action: Action) {
+    return new Promise((res, rej) => {
+      const socket = new net.Socket();
+      let result = '';
+
+      socket.on('data', (data) => {
+        result += data.toString();
+      });
+      socket.on('end', () => {
+        res(result);
+      });
+      socket.on('error', (e) => {
+        rej(e);
+      });
+
+      socket.connect(
+        {
+          // !TODO obtain port dynamically
+          port: 3014,
+          host: 'localhost',
+        },
+        () => {
+          socket.write(JSON.stringify(action));
+        }
+      );
+    });
+  }
+
+  async listener(
     req: http.IncomingMessage,
     res: http.ServerResponse<http.IncomingMessage>
-  ) => {
+  ) {
+    res.statusCode = 404;
+    res.end();
     try {
       const { url, method } = req;
       const body = method === 'POST' ? await parseBody(req) : null;
@@ -36,11 +85,13 @@ export class Controller {
         case METHODS.GET:
           switch (true) {
             case path === ENDPOINTS.USERS: {
-              console.log('get all users service');
-              const result = await this.repository[Operations.READ]();
-              console.log(result);
+              const result = await this.dispatchAction({
+                name: 'getAll',
+              });
 
-              res.end(JSON.stringify(result));
+              res.write(result);
+              res.setHeader('Content-Type', 'application/json');
+              res.end();
               break;
             }
             case path.startsWith(ENDPOINTS.USERS):
@@ -54,31 +105,26 @@ export class Controller {
 
         case METHODS.POST:
           if (path === ENDPOINTS.USERS) {
-            /* ===========================================TEST REP V2================================================= */
-            const socket = new net.Socket();
-            let result = '';
-            socket.on('data', (data) => {
-              console.log((result += data.toString()));
-            });
-            socket.on('end', () => {
-              console.log('Socket closed with data', result);
-            });
-            socket.connect(
-              {
-                port: 3014,
-                host: 'localhost',
-              },
-              () => {
-                socket.write(body);
-              }
-            );
-            /* ===========================================TEST REP V2================================================= */
-            console.log('creating user service');
-            res.end(
-              JSON.stringify(
-                await this.repository[Operations.CREATE](JSON.parse(body))
-              )
-            );
+            try {
+              const parsedBody = JSON.parse(body) as UserDTO;
+              // TODO body data validation
+
+              const result = await this.dispatchAction({
+                name: 'create',
+                payload: {
+                  age: parsedBody.age,
+                  hobbies: parsedBody.hobbies,
+                  username: parsedBody.username,
+                },
+              });
+              console.log('write head');
+
+              res.statusCode = 400;
+              res.end(result);
+            } catch (error) {
+              res.statusCode = 500;
+              res.end('BOOM!');
+            }
           } else {
             sendWrongUrlError(res);
           }
@@ -106,5 +152,5 @@ export class Controller {
       res.statusCode = 500;
       res.end("Oops!.. It's not you, it's me :(");
     }
-  };
+  }
 }

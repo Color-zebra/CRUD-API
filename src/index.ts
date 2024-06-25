@@ -4,7 +4,6 @@ import { Controller } from './controller/index';
 import { Balancer } from './balancer/index';
 import cluster from 'cluster';
 import os from 'os';
-import { Operations, Repository } from './repository';
 import { Repository as RepositoryV2 } from './repository-v2';
 
 dotenv.config();
@@ -17,7 +16,6 @@ class App {
   isMulti: boolean;
   balancer: Balancer;
   isMain: boolean;
-  repository: Repository;
   repositoryV2: RepositoryV2;
 
   constructor() {
@@ -59,17 +57,17 @@ class App {
 
   startMulti() {
     if (cluster.isPrimary) {
-      this.repository = new Repository();
+      // this.repository = new Repository();
       const workers: Array<typeof cluster.worker> = [];
 
       for (let i = 0; i < os.cpus().length; i++) {
         const newWorker = cluster.fork({ PORT: this.port + i + 1 });
-        newWorker.on('message', async (msg) => {
-          console.log(msg.cmd);
-          // @ts-expect-error asdasd
-          const res = this.repository[msg.cmd as Operations](msg.payload);
-          newWorker.send(await res);
-        });
+        // newWorker.on('message', async (msg) => {
+        //   console.log(msg.cmd);
+        //   // @ts-expect-error asdasd
+        //   const res = this.repository[msg.cmd as Operations](msg.payload);
+        //   newWorker.send(await res);
+        // });
         workers.push(newWorker);
       }
 
