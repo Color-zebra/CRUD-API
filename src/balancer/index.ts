@@ -21,6 +21,8 @@ export class Balancer {
       this.currWorkerIndex = 0;
     }
 
+    console.log(portForUse);
+
     return portForUse;
   }
 
@@ -44,14 +46,12 @@ export class Balancer {
         }
       );
 
-      reqToWorker.on('response', (r) => {
-        console.log(r.statusCode);
-      });
-
       if (method === 'POST') {
         const body = await parseBody(req);
         reqToWorker.write(body);
       }
+
+      reqToWorker.end();
     });
 
     server.listen(this.port, () => {

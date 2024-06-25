@@ -1,6 +1,7 @@
 import net from 'net';
 import { DB, User, UserDTO } from '../DB';
 import { Action } from '../controller';
+import { v4 as uuidv4, validate } from 'uuid';
 
 export class Repository {
   port: number;
@@ -12,9 +13,27 @@ export class Repository {
     this.DB = DB;
   }
 
-  handleAction(action: Action) {
-    console.log(action);
+  async init() {
+    return new Promise((res) => {
+      this.netServer = net.createServer((socket) => {
+        socket.on('data', async (data) => {
+          try {
+            const action = JSON.parse(data.toString());
+            const result = await this.handleAction(action);
+            socket.end(JSON.stringify(result));
+          } catch (error) {
+            socket.end(error.message);
+          }
+        });
+      });
 
+      this.netServer.listen(this.port, () => {
+        res(this.netServer);
+      });
+    });
+  }
+
+  handleAction(action: Action) {
     switch (action.name) {
       case 'create':
         return this.createUser(action.payload);
@@ -31,29 +50,8 @@ export class Repository {
     }
   }
 
-  async init() {
-    console.log(this.port);
-
-    return new Promise((res) => {
-      this.netServer = net.createServer((socket) => {
-        socket.on('data', async (data) => {
-          const action = JSON.parse(data.toString());
-          const result = await this.handleAction(action);
-          socket.end(JSON.stringify(result));
-        });
-      });
-
-      this.netServer.listen(this.port, () => {
-        res(this.netServer);
-      });
-    });
-  }
-
   async createUser(user: UserDTO) {
-    // TODO generate uuid;
-    console.log(user);
-
-    DB.push({ ...user, id: 'aasd' });
+    DB.push({ ...user, id: uuidv4() });
     return user;
   }
 
@@ -66,6 +64,9 @@ export class Repository {
   }
 
   async getUser(userId: string) {
+    if (!validate(userId)) {
+      throw new Error('Invalid user ID');
+    }
     const user = DB.find(({ id }) => id === userId);
 
     if (user) {

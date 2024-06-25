@@ -20,17 +20,17 @@ class App {
 
   constructor() {
     this.parseEnv();
-    this.controller = new Controller();
-    this.server = http.createServer(this.controller.listener);
   }
 
-  start() {
+  async start() {
+    await this.initDB();
+    this.controller = new Controller(this.DBPort);
+    this.server = http.createServer(this.controller.listener);
     if (this.isMulti) {
       this.startMulti();
     } else {
       this.server.listen(this.port);
     }
-    this.initDB();
   }
 
   async initDB() {

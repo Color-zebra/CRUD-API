@@ -37,7 +37,10 @@ export type Action =
     };
 
 export class Controller {
-  constructor() {
+  DBPort: number;
+
+  constructor(DBport: number) {
+    this.DBPort = DBport;
     this.listener = this.listener.bind(this);
   }
 
@@ -53,14 +56,13 @@ export class Controller {
         res(result);
       });
       socket.on('error', (e) => {
+        console.log(e);
         rej(e);
       });
 
       socket.connect(
         {
-          // !TODO obtain port dynamically
-          // port: 3014,
-          port: 3010,
+          port: this.DBPort,
           host: 'localhost',
         },
         () => {
@@ -87,16 +89,25 @@ export class Controller {
               const result = await this.dispatchAction({
                 name: 'getAll',
               });
-
               res.setHeader('Content-Type', 'application/json');
-              res.write(result);
-              res.end();
+              res.end(result);
               break;
             }
-            case path.startsWith(ENDPOINTS.USERS):
-              console.log('get specific user service');
-              res.end('get specific user service');
+            case path.startsWith(ENDPOINTS.USERS): {
+              try {
+                const id = path.split('/')[3];
+                const result = await this.dispatchAction({
+                  name: 'get',
+                  payload: id,
+                });
+                res.setHeader('Content-Type', 'application/json');
+                res.end(result);
+              } catch (error) {
+                res.statusCode = 400;
+                res.end(error.message);
+              }
               break;
+            }
             default:
               sendWrongUrlError(res);
           }
