@@ -59,7 +59,8 @@ export class Controller {
       socket.connect(
         {
           // !TODO obtain port dynamically
-          port: 3014,
+          // port: 3014,
+          port: 3010,
           host: 'localhost',
         },
         () => {
@@ -73,8 +74,6 @@ export class Controller {
     req: http.IncomingMessage,
     res: http.ServerResponse<http.IncomingMessage>
   ) {
-    res.statusCode = 404;
-    res.end();
     try {
       const { url, method } = req;
       const body = method === 'POST' ? await parseBody(req) : null;
@@ -89,8 +88,8 @@ export class Controller {
                 name: 'getAll',
               });
 
-              res.write(result);
               res.setHeader('Content-Type', 'application/json');
+              res.write(result);
               res.end();
               break;
             }
@@ -117,11 +116,13 @@ export class Controller {
                   username: parsedBody.username,
                 },
               });
-              console.log('write head');
 
-              res.statusCode = 400;
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
               res.end(result);
             } catch (error) {
+              console.log(error);
+
               res.statusCode = 500;
               res.end('BOOM!');
             }

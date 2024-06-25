@@ -36,15 +36,22 @@ export class Balancer {
           method,
           headers,
         },
-        (workerRes) => workerRes.pipe(res)
+        (workerRes) => {
+          const code = workerRes.statusCode;
+          const headers = workerRes.headers;
+          res.writeHead(code, headers);
+          workerRes.pipe(res);
+        }
       );
+
+      reqToWorker.on('response', (r) => {
+        console.log(r.statusCode);
+      });
 
       if (method === 'POST') {
         const body = await parseBody(req);
         reqToWorker.write(body);
       }
-
-      reqToWorker.end();
     });
 
     server.listen(this.port, () => {

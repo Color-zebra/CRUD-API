@@ -13,6 +13,8 @@ export class Repository {
   }
 
   handleAction(action: Action) {
+    console.log(action);
+
     switch (action.name) {
       case 'create':
         return this.createUser(action.payload);
@@ -30,6 +32,8 @@ export class Repository {
   }
 
   async init() {
+    console.log(this.port);
+
     return new Promise((res) => {
       this.netServer = net.createServer((socket) => {
         socket.on('data', async (data) => {
