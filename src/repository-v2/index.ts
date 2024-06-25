@@ -22,6 +22,8 @@ export class Repository {
             const result = await this.handleAction(action);
             socket.end(JSON.stringify(result));
           } catch (error) {
+            console.log(error.message);
+
             socket.end(error.message);
           }
         });
@@ -50,24 +52,30 @@ export class Repository {
     }
   }
 
+  checkId(id: string) {
+    if (!validate(id)) {
+      throw new Error('Invalid user ID');
+    }
+  }
+
   async createUser(user: UserDTO) {
-    DB.push({ ...user, id: uuidv4() });
+    this.DB.push({ ...user, id: uuidv4() });
     return user;
   }
 
   async deleteUser(userId: string) {
-    if (DB.some(({ id }) => userId === id)) {
-      DB.filter(({ id }) => id !== userId);
+    this.checkId(userId);
+    if (this.DB.some(({ id }) => userId === id)) {
+      this.DB = this.DB.filter(({ id }) => id !== userId);
+      return true;
     } else {
       throw new Error('No user');
     }
   }
 
   async getUser(userId: string) {
-    if (!validate(userId)) {
-      throw new Error('Invalid user ID');
-    }
-    const user = DB.find(({ id }) => id === userId);
+    this.checkId(userId);
+    const user = this.DB.find(({ id }) => id === userId);
 
     if (user) {
       return user;
@@ -77,14 +85,15 @@ export class Repository {
   }
 
   async getAllUsers() {
-    return DB;
+    return this.DB;
   }
 
   async updateUser(userId: string, user: UserDTO) {
-    const currUserIndex = DB.findIndex(({ id }) => id === userId);
+    this.checkId(userId);
+    const currUserIndex = this.DB.findIndex(({ id }) => id === userId);
 
     if (currUserIndex) {
-      DB[currUserIndex] = { ...DB[currUserIndex], ...user };
+      this.DB[currUserIndex] = { ...this.DB[currUserIndex], ...user };
       return DB[currUserIndex];
     } else {
       throw new Error('No user');

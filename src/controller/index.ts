@@ -94,18 +94,13 @@ export class Controller {
               break;
             }
             case path.startsWith(ENDPOINTS.USERS): {
-              try {
-                const id = path.split('/')[3];
-                const result = await this.dispatchAction({
-                  name: 'get',
-                  payload: id,
-                });
-                res.setHeader('Content-Type', 'application/json');
-                res.end(result);
-              } catch (error) {
-                res.statusCode = 400;
-                res.end(error.message);
-              }
+              const id = path.split('/')[3];
+              const result = await this.dispatchAction({
+                name: 'get',
+                payload: id,
+              });
+              res.setHeader('Content-Type', 'application/json');
+              res.end(result);
               break;
             }
             default:
@@ -144,8 +139,19 @@ export class Controller {
 
         case METHODS.DELETE:
           if (path.startsWith(ENDPOINTS.USERS)) {
-            console.log('deleting user service');
-            res.end('deleting user service');
+            const id = path.split('/')[3];
+            const result = await this.dispatchAction({
+              name: 'delete',
+              payload: id,
+            });
+            if (result === 'true') {
+              res.statusCode = 204;
+            } else if (result === 'No user') {
+              res.statusCode = 404;
+              res.statusMessage = 'There is no such user';
+            }
+            res.setHeader('Content-Type', 'application/json');
+            res.end();
           } else {
             sendWrongUrlError(res);
           }
@@ -161,6 +167,7 @@ export class Controller {
           break;
       }
     } catch (error) {
+      console.log(error);
       res.statusCode = 500;
       res.end("Oops!.. It's not you, it's me :(");
     }
