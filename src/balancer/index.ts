@@ -46,7 +46,7 @@ export class Balancer {
         }
       );
 
-      if (method === 'POST') {
+      if (['POST', 'PUT'].includes(method)) {
         const body = await parseBody(req);
         reqToWorker.write(body);
       }

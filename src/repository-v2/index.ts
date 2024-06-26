@@ -1,6 +1,6 @@
 import net from 'net';
 import { DB, User, UserDTO } from '../DB';
-import { Action } from '../controller';
+import { Action } from '../userService';
 import { v4 as uuidv4, validate } from 'uuid';
 
 export class Repository {
@@ -75,6 +75,8 @@ export class Repository {
 
   async getUser(userId: string) {
     this.checkId(userId);
+    console.log(this.DB);
+
     const user = this.DB.find(({ id }) => id === userId);
 
     if (user) {
@@ -92,8 +94,10 @@ export class Repository {
     this.checkId(userId);
     const currUserIndex = this.DB.findIndex(({ id }) => id === userId);
 
-    if (currUserIndex) {
+    if (currUserIndex !== -1) {
       this.DB[currUserIndex] = { ...this.DB[currUserIndex], ...user };
+      console.log(this.DB);
+
       return DB[currUserIndex];
     } else {
       throw new Error('No user');

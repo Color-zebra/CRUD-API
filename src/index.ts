@@ -23,14 +23,25 @@ class App {
   }
 
   async start() {
-    await this.initDB();
+    if (this.isMulti) {
+      await this.startMulti();
+    } else {
+      await this.initDB();
+      this.initServer();
+    }
+  }
+
+  initServer() {
     this.controller = new Controller(this.DBPort);
     this.server = http.createServer(this.controller.listener);
-    if (this.isMulti) {
-      this.startMulti();
-    } else {
-      this.server.listen(this.port);
-    }
+    this.server.listen(this.port, () => {
+      console.log(
+        'Child server starting on port',
+        this.port,
+        'and with PID',
+        process.pid
+      );
+    });
   }
 
   async initDB() {
@@ -55,12 +66,16 @@ class App {
     }
   }
 
-  startMulti() {
+  async startMulti() {
     if (cluster.isPrimary) {
-      const workers: Array<typeof cluster.worker> = [];
+      await this.initDB();
 
+      const workers: Array<typeof cluster.worker> = [];
       for (let i = 0; i < os.cpus().length; i++) {
-        const newWorker = cluster.fork({ PORT: this.port + i + 1 });
+        const newWorker = cluster.fork({
+          PORT: this.port + i + 1,
+          DBPort: this.DBPort,
+        });
         workers.push(newWorker);
       }
 
@@ -68,14 +83,8 @@ class App {
     }
 
     if (cluster.isWorker) {
-      this.server.listen(this.port, () => {
-        console.log(
-          'Child server starting on port',
-          this.port,
-          'and with PID',
-          process.pid
-        );
-      });
+      this.DBPort = +process.env.DBPort;
+      this.initServer();
     }
   }
 }
