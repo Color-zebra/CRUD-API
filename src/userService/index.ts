@@ -1,7 +1,17 @@
 import http from 'http';
 import net from 'net';
 import { UserDTO } from '../DB';
-import { sendServerError } from '../utils/errorSenders';
+import {
+  ERROR_PREFIX,
+  sendInvalidDataError,
+  sendWrongUrlError,
+} from '../utils/errorSenders';
+
+import errorService from '../errorService';
+
+import { userDTOTypeGuard } from '../utils/UserDTOTypeGuard';
+
+import { sendResultWithStatusCode } from '../utils/responseSenders';
 
 export type Action =
   | {
@@ -30,7 +40,7 @@ export class UserService {
   }
 
   async dispatchAction(action: Action) {
-    return new Promise((res, rej) => {
+    return new Promise<string>((res, rej) => {
       const socket = new net.Socket();
       let result = '';
 
@@ -38,10 +48,13 @@ export class UserService {
         result += data.toString();
       });
       socket.on('end', () => {
-        res(result);
+        if (result.startsWith(ERROR_PREFIX)) {
+          rej(new Error(result.replace(ERROR_PREFIX, '')));
+        } else {
+          res(result);
+        }
       });
       socket.on('error', (e) => {
-        console.log(e);
         rej(e);
       });
 
@@ -58,26 +71,44 @@ export class UserService {
   }
 
   async getAllUsers(res: http.ServerResponse<http.IncomingMessage>) {
-    const result = await this.dispatchAction({
-      name: 'getAll',
-    });
-    res.setHeader('Content-Type', 'application/json');
-    res.end(result);
+    try {
+      const result = await this.dispatchAction({
+        name: 'getAll',
+      });
+      sendResultWithStatusCode(res, result);
+    } catch (error) {
+      errorService.handleError(error, res);
+    }
   }
 
   async getUser(res: http.ServerResponse<http.IncomingMessage>, path: string) {
-    const id = path.split('/')[3];
-    const result = await this.dispatchAction({
-      name: 'get',
-      payload: id,
-    });
-    res.setHeader('Content-Type', 'application/json');
-    res.end(result);
+    const splittedPath = path.split('/');
+
+    if (splittedPath.length !== 4) {
+      sendWrongUrlError(res);
+      return;
+    }
+
+    const id = splittedPath[3];
+    try {
+      const result = await this.dispatchAction({
+        name: 'get',
+        payload: id,
+      });
+      sendResultWithStatusCode(res, result);
+    } catch (error) {
+      errorService.handleError(error, res);
+    }
   }
 
   async addUser(res: http.ServerResponse<http.IncomingMessage>, body: string) {
     try {
-      const parsedBody = JSON.parse(body) as UserDTO;
+      const parsedBody = JSON.parse(body);
+      if (!userDTOTypeGuard(parsedBody)) {
+        sendInvalidDataError(res);
+        return;
+      }
+
       const result = await this.dispatchAction({
         name: 'create',
         payload: {
@@ -86,12 +117,9 @@ export class UserService {
           username: parsedBody.username,
         },
       });
-
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(result);
+      sendResultWithStatusCode(res, result, 201);
     } catch (error) {
-      sendServerError(res);
+      errorService.handleError(error, res);
     }
   }
 
@@ -99,19 +127,22 @@ export class UserService {
     res: http.ServerResponse<http.IncomingMessage>,
     path: string
   ) {
-    const id = path.split('/')[3];
-    const result = await this.dispatchAction({
-      name: 'delete',
-      payload: id,
-    });
-    if (result === 'true') {
-      res.statusCode = 204;
-    } else if (result === 'No user') {
-      res.statusCode = 404;
-      res.statusMessage = 'There is no such user';
+    try {
+      const splittedPath = path.split('/');
+      if (splittedPath.length !== 4) {
+        sendWrongUrlError(res);
+        return;
+      }
+
+      const id = splittedPath[3];
+      await this.dispatchAction({
+        name: 'delete',
+        payload: id,
+      });
+      sendResultWithStatusCode(res, undefined, 204);
+    } catch (error) {
+      errorService.handleError(error, res);
     }
-    res.setHeader('Content-Type', 'application/json');
-    res.end();
   }
 
   async updateUser(
@@ -120,9 +151,19 @@ export class UserService {
     body: string
   ) {
     try {
-      const parsedBody = JSON.parse(body) as UserDTO;
-      const id = path.split('/')[3];
-      console.log(parsedBody, id);
+      const parsedBody = JSON.parse(body);
+      if (!userDTOTypeGuard(parsedBody)) {
+        sendInvalidDataError(res);
+        return;
+      }
+
+      const splittedPath = path.split('/');
+      if (splittedPath.length !== 4) {
+        sendWrongUrlError(res);
+        return;
+      }
+
+      const id = splittedPath[3];
 
       const result = await this.dispatchAction({
         name: 'update',
@@ -135,12 +176,9 @@ export class UserService {
           },
         },
       });
-
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(result);
+      sendResultWithStatusCode(res, result);
     } catch (error) {
-      sendServerError(res);
+      errorService.handleError(error, res);
     }
   }
 }

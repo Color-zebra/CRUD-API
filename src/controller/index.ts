@@ -1,7 +1,7 @@
 import http from 'http';
 import { parseBody } from '../utils/bodyParser';
 import { parseURL } from '../utils/urlParser';
-import { sendWrongUrlError } from '../utils/errorSenders';
+import { sendServerError, sendWrongUrlError } from '../utils/errorSenders';
 import { UserService } from '../userService';
 
 enum ENDPOINTS {
@@ -84,9 +84,7 @@ export class Controller {
           sendWrongUrlError(res);
       }
     } catch (error) {
-      console.log(error);
-      res.statusCode = 500;
-      res.end("Oops!.. It's not you, it's me :(");
+      sendServerError(res);
     }
   }
 }

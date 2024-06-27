@@ -2,6 +2,7 @@ import net from 'net';
 import { DB, User, UserDTO } from '../DB';
 import { Action } from '../userService';
 import { v4 as uuidv4, validate } from 'uuid';
+import { ERROR_MESSAGES, ERROR_PREFIX } from '../utils/errorSenders';
 
 export class Repository {
   port: number;
@@ -22,9 +23,7 @@ export class Repository {
             const result = await this.handleAction(action);
             socket.end(JSON.stringify(result));
           } catch (error) {
-            console.log(error.message);
-
-            socket.end(error.message);
+            socket.end(`${ERROR_PREFIX}${error.message}`);
           }
         });
       });
@@ -54,7 +53,7 @@ export class Repository {
 
   checkId(id: string) {
     if (!validate(id)) {
-      throw new Error('Invalid user ID');
+      throw new Error(ERROR_MESSAGES.UUID);
     }
   }
 
@@ -69,20 +68,19 @@ export class Repository {
       this.DB = this.DB.filter(({ id }) => id !== userId);
       return true;
     } else {
-      throw new Error('No user');
+      throw new Error(ERROR_MESSAGES.NO_USER);
     }
   }
 
   async getUser(userId: string) {
     this.checkId(userId);
-    console.log(this.DB);
 
     const user = this.DB.find(({ id }) => id === userId);
 
     if (user) {
       return user;
     } else {
-      throw new Error('No user');
+      throw new Error(ERROR_MESSAGES.NO_USER);
     }
   }
 
@@ -96,11 +94,10 @@ export class Repository {
 
     if (currUserIndex !== -1) {
       this.DB[currUserIndex] = { ...this.DB[currUserIndex], ...user };
-      console.log(this.DB);
 
       return DB[currUserIndex];
     } else {
-      throw new Error('No user');
+      throw new Error(ERROR_MESSAGES.NO_USER);
     }
   }
 
