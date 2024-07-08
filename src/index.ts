@@ -1,12 +1,13 @@
 import http from 'http';
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv';
+import 'dotenv/config';
 import { Controller } from './controller/index';
 import { Balancer } from './balancer/index';
 import cluster from 'cluster';
 import os from 'os';
 import { Repository as RepositoryV2 } from './repository-v2';
 
-dotenv.config();
+// dotenv.config();
 
 class App {
   controller: Controller;
@@ -26,14 +27,16 @@ class App {
     if (this.isMulti) {
       await this.startMulti();
     } else {
-      await this.initDB();
       this.initServer();
+      await this.initDB();
     }
   }
 
   initServer() {
+    this.DBPort = this.port + os.cpus().length + 1;
     this.controller = new Controller(this.DBPort);
     this.server = http.createServer(this.controller.listener);
+    this.server.on('close', () => this.repositoryV2.netServer.close());
     this.server.listen(this.port, () => {
       console.log(
         'Child server starting on port',
@@ -46,7 +49,7 @@ class App {
 
   async initDB() {
     try {
-      this.repositoryV2 = new RepositoryV2(this.port + os.cpus().length + 1);
+      this.repositoryV2 = new RepositoryV2(this.DBPort);
       await this.repositoryV2.init();
       this.DBPort = this.repositoryV2.getDBPort();
     } catch (error) {
@@ -64,6 +67,10 @@ class App {
     } else {
       this.port = port;
     }
+  }
+
+  getServer() {
+    return this.server;
   }
 
   async startMulti() {
@@ -89,6 +96,8 @@ class App {
   }
 }
 
-const app = new App();
+export const app = new App();
 
 app.start();
+
+export const server = app.getServer();

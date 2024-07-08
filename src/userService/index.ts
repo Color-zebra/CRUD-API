@@ -36,6 +36,8 @@ export type Action =
 export class UserService {
   DBPort: number;
   constructor(DBPort: number) {
+    console.log('DBPort', DBPort);
+
     this.DBPort = DBPort;
   }
 
@@ -49,6 +51,8 @@ export class UserService {
       });
       socket.on('end', () => {
         if (result.startsWith(ERROR_PREFIX)) {
+          console.log('res', result);
+
           rej(new Error(result.replace(ERROR_PREFIX, '')));
         } else {
           res(result);
@@ -71,6 +75,7 @@ export class UserService {
   }
 
   async getAllUsers(res: http.ServerResponse<http.IncomingMessage>) {
+    // sendResultWithStatusCode(res, '');
     try {
       const result = await this.dispatchAction({
         name: 'getAll',

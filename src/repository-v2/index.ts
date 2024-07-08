@@ -35,6 +35,8 @@ export class Repository {
   }
 
   handleAction(action: Action) {
+    // TODO ESLint
+    var a = 'asd';
     switch (action.name) {
       case 'create':
         return this.createUser(action.payload);
@@ -58,8 +60,9 @@ export class Repository {
   }
 
   async createUser(user: UserDTO) {
-    this.DB.push({ ...user, id: uuidv4() });
-    return user;
+    const newUser = { ...user, id: uuidv4() };
+    this.DB.push(newUser);
+    return newUser;
   }
 
   async deleteUser(userId: string) {
@@ -102,6 +105,7 @@ export class Repository {
   }
 
   getDBPort() {
+    console.log('init db', this.port);
     return this.port;
   }
 }
