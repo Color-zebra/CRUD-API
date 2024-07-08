@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 import { app } from '../index';
 
-export const ENDPOINT = '/api/users';
+const ENDPOINT = '/api/users';
 
 const MOCK_USER = {
   username: 'The One',

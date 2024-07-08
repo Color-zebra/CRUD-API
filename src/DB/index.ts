@@ -1,6 +1,6 @@
 export type UserDTO = {
   username: string;
-  age: string;
+  age: number;
   hobbies: string[];
 };
 
