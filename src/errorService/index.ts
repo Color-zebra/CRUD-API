@@ -11,7 +11,6 @@ import {
 class ErrorService {
   constructor() {}
   handleError(error: unknown, res: http.ServerResponse<http.IncomingMessage>) {
-    console.log(error);
     if (checkIsJSONError(error)) {
       sendWrongInputError(res);
     } else if (error instanceof Error) {

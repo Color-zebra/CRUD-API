@@ -65,6 +65,12 @@ const REQUESTS_WITHOUT_REQUIRED_FIELDS: Array<Partial<UserDTO>> = [
   },
 ];
 
+const invalidJSON = `{
+  'username': 'Master Gervant',
+  'age': 117,
+  'hobbies: ['gwint', 'Gwint', 'GWINT!'],
+}`;
+
 describe('Scenario №2 - Invalid requests', () => {
   afterAll(() => {
     app.server.close();
@@ -79,6 +85,19 @@ describe('Scenario №2 - Invalid requests', () => {
         .set('Accept', 'application/json')
         .expect(400);
     }
+  });
+
+  test('Requests with JSON with invalid syntax', async () => {
+    await supertest(app.server)
+      .post(ENDPOINT)
+      .send(invalidJSON)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .expect(400)
+      .then((res) => {
+        const msg = res.text;
+        expect(msg).toBe('Incorrect JSON');
+      });
   });
 
   test('Requests without required fields', async () => {
