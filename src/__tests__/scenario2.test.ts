@@ -77,7 +77,7 @@ describe('Scenario №2 - Invalid requests', () => {
   });
 
   test('Requests with invalid fields', async () => {
-    for (let item of INVALID_REQUEST_BODIES) {
+    for (const item of INVALID_REQUEST_BODIES) {
       await supertest(app.server)
         .post(ENDPOINT)
         .send(item)
@@ -101,7 +101,7 @@ describe('Scenario №2 - Invalid requests', () => {
   });
 
   test('Requests without required fields', async () => {
-    for (let item of REQUESTS_WITHOUT_REQUIRED_FIELDS) {
+    for (const item of REQUESTS_WITHOUT_REQUIRED_FIELDS) {
       await supertest(app.server)
         .post(ENDPOINT)
         .send(item)

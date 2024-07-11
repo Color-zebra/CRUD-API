@@ -35,8 +35,6 @@ export class Repository {
   }
 
   handleAction(action: Action) {
-    // TODO ESLint
-    var a = 'asd';
     switch (action.name) {
       case 'create':
         return this.createUser(action.payload);
