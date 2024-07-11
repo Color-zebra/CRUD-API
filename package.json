@@ -8,7 +8,7 @@
     "start:prod-multi": "webpack --mode=production --node-env=production && cross-env WORK_MODE=multi node ./build/main.js",
     "start:dev": "webpack --watch",
     "start:multi": "cross-env WORK_MODE=multi webpack --watch",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "jest --detectOpenHandles --forceExit --silent --verbose"
   },
   "keywords": [],
   "author": "",

@@ -55,8 +55,7 @@ export const checkIsJSONError = (e: unknown) => {
   if (
     e instanceof Error &&
     e.name === 'SyntaxError' &&
-    (e.message.startsWith('Unexpected token') ||
-      e.message.startsWith('Unexpected end of JSON'))
+    e.message.includes('JSON')
   ) {
     return true;
   }

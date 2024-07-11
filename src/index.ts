@@ -24,6 +24,7 @@ class App {
   }
 
   async start() {
+    this.DBPort = this.port + os.cpus().length + 1;
     if (this.isMulti) {
       await this.startMulti();
     } else {
@@ -33,7 +34,6 @@ class App {
   }
 
   initServer() {
-    this.DBPort = this.port + os.cpus().length + 1;
     this.controller = new Controller(this.DBPort);
     this.server = http.createServer(this.controller.listener);
     this.server.on('close', () => this.repositoryV2.netServer.close());
@@ -52,6 +52,7 @@ class App {
       this.repositoryV2 = new RepositoryV2(this.DBPort);
       await this.repositoryV2.init();
       this.DBPort = this.repositoryV2.getDBPort();
+      console.log('DB starts on port', this.DBPort, '(TCP only)');
     } catch (error) {
       console.log(error);
     }

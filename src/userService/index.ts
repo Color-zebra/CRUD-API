@@ -36,8 +36,6 @@ export type Action =
 export class UserService {
   DBPort: number;
   constructor(DBPort: number) {
-    console.log('DBPort', DBPort);
-
     this.DBPort = DBPort;
   }
 

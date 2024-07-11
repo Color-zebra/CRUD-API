@@ -103,7 +103,6 @@ export class Repository {
   }
 
   getDBPort() {
-    console.log('init db', this.port);
     return this.port;
   }
 }
